@@ -1,0 +1,17 @@
+{
+	"name": "sink_ds_azuresqlserver",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabaseLinkedService",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "ExcelStudentDetails"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

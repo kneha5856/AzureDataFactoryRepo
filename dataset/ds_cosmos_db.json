@@ -1,0 +1,16 @@
+{
+	"name": "ds_cosmos_db",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "CosmosDbLinkedService",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "CosmosDbSqlApiCollection",
+		"schema": {},
+		"typeProperties": {
+			"collectionName": "t_employee"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

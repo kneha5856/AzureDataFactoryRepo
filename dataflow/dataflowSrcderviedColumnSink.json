@@ -1,0 +1,45 @@
+{
+	"name": "dataflowSrcderviedColumnSink",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "source_ds_excel",
+						"type": "DatasetReference"
+					},
+					"name": "AzureSQLexcelsrc"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_azuresql",
+						"type": "DatasetReference"
+					},
+					"name": "AzureSQLSource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "nkds_sink",
+						"type": "DatasetReference"
+					},
+					"name": "BlobStorageSink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "DeriveLoadedDate"
+				},
+				{
+					"name": "SplitbyName"
+				},
+				{
+					"name": "unionstudentdetails"
+				}
+			],
+			"script": "source(output(\n\t\tRollNo as string,\n\t\tName as string,\n\t\tLastname as string,\n\t\tPlace as string,\n\t\tGender as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> AzureSQLexcelsrc\nsource(output(\n\t\tRollNo as string,\n\t\tName as string,\n\t\tLastname as string,\n\t\tPlace as string,\n\t\tGender as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: true,\n\tinferDriftedColumnTypes: true,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> AzureSQLSource\nSplitbyName@Startswiths derive(LoadedDate = currentDate()) ~> DeriveLoadedDate\nunionstudentdetails split(startsWith(Name,'S'),\n\tdisjoint: true) ~> SplitbyName@(Startswiths)\nAzureSQLexcelsrc, AzureSQLSource union(byName: true)~> unionstudentdetails\nDeriveLoadedDate sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['DFStudents.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> BlobStorageSink"
+		}
+	}
+}

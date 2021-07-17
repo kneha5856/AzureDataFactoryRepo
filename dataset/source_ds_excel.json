@@ -1,0 +1,44 @@
+{
+	"name": "source_ds_excel",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "nkdemoAzureBlobStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": "Sheet1",
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "StudentDetails.xlsx",
+				"folderPath": "Input",
+				"container": "nkdemocontainer"
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": [
+			{
+				"name": "RollNo",
+				"type": "String"
+			},
+			{
+				"name": "Name",
+				"type": "String"
+			},
+			{
+				"name": "Lastname",
+				"type": "String"
+			},
+			{
+				"name": "Place",
+				"type": "String"
+			},
+			{
+				"name": "Gender",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

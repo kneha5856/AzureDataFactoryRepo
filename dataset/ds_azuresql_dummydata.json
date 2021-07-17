@@ -1,0 +1,17 @@
+{
+	"name": "ds_azuresql_dummydata",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabaseLinkedService",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Dummydata"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

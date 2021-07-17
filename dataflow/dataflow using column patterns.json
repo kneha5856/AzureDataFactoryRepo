@@ -1,0 +1,32 @@
+{
+	"name": "dataflow using column patterns",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_blob_sales_excel",
+						"type": "DatasetReference"
+					},
+					"name": "SalesExcelSrc"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "nkds_sink",
+						"type": "DatasetReference"
+					},
+					"name": "sinkforcolumnpatterns"
+				}
+			],
+			"transformations": [
+				{
+					"name": "AggregatebyCategory"
+				}
+			],
+			"script": "source(output(\n\t\t{Row ID} as short,\n\t\t{Order ID} as string,\n\t\t{Order Date} as date,\n\t\t{Ship Date} as date,\n\t\t{Ship Mode} as string,\n\t\t{Customer ID} as string,\n\t\t{Customer Name} as string,\n\t\tSegment as string,\n\t\tCountry as string,\n\t\tCity as string,\n\t\tState as string,\n\t\t{Postal Code} as integer,\n\t\tRegion as string,\n\t\t{Product ID} as string,\n\t\tCategory as string,\n\t\t{Sub-Category} as string,\n\t\t{Product Name} as string,\n\t\t{Total Sales} as double,\n\t\tQuantity as short,\n\t\t{Total Discount} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> SalesExcelSrc\nSalesExcelSrc aggregate(groupBy(Category),\n\teach(match(type=='double'), $$ = sum($$))) ~> AggregatebyCategory\nAggregatebyCategory sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['SalesOutputAggregateWithColumnPatterns.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> sinkforcolumnpatterns"
+		}
+	}
+}

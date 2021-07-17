@@ -1,0 +1,6 @@
+{
+	"name": "SHIRSQLServer",
+	"properties": {
+		"type": "SelfHosted"
+	}
+}

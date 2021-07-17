@@ -1,0 +1,32 @@
+{
+	"name": "dataflow using unpivot",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_sales_pivoted_output_folder",
+						"type": "DatasetReference"
+					},
+					"name": "sourceoutputsalespivoteddata"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "nkds_sink",
+						"type": "DatasetReference"
+					},
+					"name": "SalesUnpivotedResults"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Unpivot1"
+				}
+			],
+			"script": "source(output(\n\t\t{Sales Channel} as string,\n\t\t{Baby Food} as double,\n\t\tBeverages as double,\n\t\tCereal as double,\n\t\tClothes as double,\n\t\tCosmetics as double,\n\t\tFruits as double,\n\t\tHousehold as double,\n\t\tMeat as double,\n\t\t{Office Supplies} as double,\n\t\t{Personal Care} as double,\n\t\tProduct1 as double,\n\t\tProduct2 as double,\n\t\tProduct3 as double,\n\t\tProduct4 as double,\n\t\tProduct5 as double,\n\t\tProduct6 as double,\n\t\tSnacks as double,\n\t\tVegetables as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: true,\n\tinferDriftedColumnTypes: true,\n\tignoreNoFilesFound: false) ~> sourceoutputsalespivoteddata\nsourceoutputsalespivoteddata unpivot(output(\n\t\t{Item Type} as string,\n\t\tRevenue as double\n\t),\n\tungroupBy({Sales Channel}),\n\tlateral: true,\n\tignoreNullPivots: false) ~> Unpivot1\nUnpivot1 sink(allowSchemaDrift: true,\n\tvalidateSchema: true,\n\tpartitionFileNames:['SalesUnpivotedResults.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> SalesUnpivotedResults"
+		}
+	}
+}

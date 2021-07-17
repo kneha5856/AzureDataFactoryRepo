@@ -1,0 +1,32 @@
+{
+	"name": "dataflow with upsert logic",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_excel_sales_src",
+						"type": "DatasetReference"
+					},
+					"name": "ExcelSalesSource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_AzureSQLSalesdata",
+						"type": "DatasetReference"
+					},
+					"name": "AzureSQL"
+				}
+			],
+			"transformations": [
+				{
+					"name": "AlterRowWithSNo"
+				}
+			],
+			"script": "source(output(\n\t\tSno as integer,\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as date,\n\t\t{Order ID} as double,\n\t\t{Ship Date} as date,\n\t\t{Units Sold} as integer,\n\t\t{Unit Price} as double,\n\t\t{Unit Cost} as double,\n\t\t{Total Revenue} as double,\n\t\t{Total Cost} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> ExcelSalesSource\nExcelSalesSource alterRow(deleteIf(isNull(Sno)),\n\tupsertIf(true())) ~> AlterRowWithSNo\nAlterRowWithSNo sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\trecreate:true,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tSno,\n\t\teach(match(type=='string'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='double'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='date'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='integer'),\n\t\t\treplace($$,' ','') = $$)\n\t)) ~> AzureSQL"
+		}
+	}
+}

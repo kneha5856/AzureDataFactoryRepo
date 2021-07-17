@@ -1,0 +1,32 @@
+{
+	"name": "dataflow using flatten",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_json",
+						"type": "DatasetReference"
+					},
+					"name": "JsonSrc"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "nkds_sink",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "FlattenbyProducts"
+				}
+			],
+			"script": "source(output(\n\t\tProducts as (manufacturer as string, modelname as string, name as string)[],\n\t\tid as string,\n\t\tpricerange as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'singleDocument',\n\tpartitionBy('hash', 1)) ~> JsonSrc\nJsonSrc foldDown(unroll(Products),\n\tmapColumn(\n\t\tmanufacturer = Products.manufacturer,\n\t\tmodelname = Products.modelname,\n\t\tname = Products.name,\n\t\tid,\n\t\tpricerange\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> FlattenbyProducts\nFlattenbyProducts sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['FlatternOutput.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> sink1"
+		}
+	}
+}

@@ -1,0 +1,9 @@
+{
+	"name": "nkADFdemo",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "fec0c5bf-c50b-411b-9021-272b66b4d896",
+		"tenantId": "9ebcd82b-3a71-49bf-891e-86d819a0911c"
+	}
+}

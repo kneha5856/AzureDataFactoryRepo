@@ -1,0 +1,19 @@
+{
+	"name": "ds_test",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "nkdemoAzureBlobStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"folderPath": "Test",
+				"container": "nkdemocontainer"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,17 @@
+{
+	"name": "sink_ds_azureexcel",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabaseLinkedService",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "CSVSalesData"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

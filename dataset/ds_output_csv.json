@@ -1,0 +1,23 @@
+{
+	"name": "ds_output_csv",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "nkdemoAzureBlobStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"folderPath": "TestOutput",
+				"container": "nkdemocontainer"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

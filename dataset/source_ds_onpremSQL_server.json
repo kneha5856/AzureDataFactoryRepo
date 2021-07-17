@@ -1,0 +1,35 @@
+{
+	"name": "source_ds_onpremSQL_server",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "SqlServerOnPremise",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "DepartmentName",
+				"type": "varchar"
+			},
+			{
+				"name": "Location",
+				"type": "varchar"
+			},
+			{
+				"name": "DepartmentHead",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "T_Status"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

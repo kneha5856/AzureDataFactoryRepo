@@ -1,0 +1,227 @@
+{
+	"name": "nkdemopipleline",
+	"properties": {
+		"description": "To move data from input folder to output in Azure blob storage",
+		"activities": [
+			{
+				"name": "DemoCopyData",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "Month",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "Month",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"Average\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"Average\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2005\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2005\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2006\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2006\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2007\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2007\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2008\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2008\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2009\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2009\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2010\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2010\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2011\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2011\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2012\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2012\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2013\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2013\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2014\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2014\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": " \"2015\"",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": " \"2015\"",
+									"type": "String",
+									"physicalType": "String"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "nkds_source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "nkds_sink",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2021-06-19T13:26:35Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

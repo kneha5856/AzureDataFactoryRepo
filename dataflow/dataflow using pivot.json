@@ -1,0 +1,36 @@
+{
+	"name": "dataflow using pivot",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_sales_csv_source",
+						"type": "DatasetReference"
+					},
+					"name": "SalescsvSrc"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "nkds_sink",
+						"type": "DatasetReference"
+					},
+					"name": "SalesPivotedResultsSink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "PivotBySalesChannel"
+				},
+				{
+					"name": "MapDrifted1",
+					"description": "Creates an explicit mapping for each drifted column"
+				}
+			],
+			"script": "source(output(\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as string,\n\t\t{Order ID} as string,\n\t\t{Ship Date} as string,\n\t\t{Units Sold} as string,\n\t\t{Unit Price} as string,\n\t\t{Unit Cost} as string,\n\t\t{Total Revenue} as string,\n\t\t{Total Cost} as string,\n\t\t{Total Profit} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: true,\n\tinferDriftedColumnTypes: true,\n\tignoreNoFilesFound: false) ~> SalescsvSrc\nSalescsvSrc pivot(groupBy({Sales Channel}),\n\tpivotBy({Item Type}),\n\t{} = sum(toDouble({Total Revenue})),\n\tcolumnNaming: '$N$V',\n\tlateral: true) ~> PivotBySalesChannel\nPivotBySalesChannel derive({Baby Food} = toDouble(byName('Baby Food')),\n\t\tBeverages = toDouble(byName('Beverages')),\n\t\tCereal = toDouble(byName('Cereal')),\n\t\tClothes = toDouble(byName('Clothes')),\n\t\tCosmetics = toDouble(byName('Cosmetics')),\n\t\tFruits = toDouble(byName('Fruits')),\n\t\tHousehold = toDouble(byName('Household')),\n\t\tMeat = toDouble(byName('Meat')),\n\t\t{Office Supplies} = toDouble(byName('Office Supplies')),\n\t\t{Personal Care} = toDouble(byName('Personal Care')),\n\t\tProduct1 = toDouble(byName('Product1')),\n\t\tProduct2 = toDouble(byName('Product2')),\n\t\tProduct3 = toDouble(byName('Product3')),\n\t\tProduct4 = toDouble(byName('Product4')),\n\t\tProduct5 = toDouble(byName('Product5')),\n\t\tProduct6 = toDouble(byName('Product6')),\n\t\tSnacks = toDouble(byName('Snacks')),\n\t\tVegetables = toDouble(byName('Vegetables'))) ~> MapDrifted1\nMapDrifted1 sink(allowSchemaDrift: true,\n\tvalidateSchema: true,\n\tpartitionFileNames:['SalesPivotedResults.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> SalesPivotedResultsSink"
+		}
+	}
+}
