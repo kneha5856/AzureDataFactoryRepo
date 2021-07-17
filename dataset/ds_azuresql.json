@@ -31,7 +31,7 @@
 		],
 		"typeProperties": {
 			"schema": "dbo",
-			"table": "SalesDataWithoutNullRecords"
+			"table": "SalesData"
 		}
 	},
 	"type": "Microsoft.DataFactory/factories/datasets"
