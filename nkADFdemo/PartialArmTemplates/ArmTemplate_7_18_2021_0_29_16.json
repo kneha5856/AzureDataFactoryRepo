@@ -1,0 +1,51 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "nkADFdemo"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow with upsert logic')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_excel_sales_src",
+								"type": "DatasetReference"
+							},
+							"name": "ExcelSalesSource"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_AzureSQLSalesdata",
+								"type": "DatasetReference"
+							},
+							"name": "AzureSQL"
+						}
+					],
+					"transformations": [
+						{
+							"name": "AlterRowWithSNo"
+						}
+					],
+					"script": "source(output(\n\t\tSno as string,\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as string,\n\t\t{Order ID} as string,\n\t\t{Ship Date} as string,\n\t\t{Units Sold} as string,\n\t\t{Unit Price} as string,\n\t\t{Unit Cost} as string,\n\t\t{Total Revenue} as string,\n\t\t{Total Cost} as string,\n\t\t{Total Profit} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> ExcelSalesSource\nExcelSalesSource alterRow(deleteIf(isNull(Sno)),\n\tupsertIf(true())) ~> AlterRowWithSNo\nAlterRowWithSNo sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:['Sno'],\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tSno,\n\t\teach(match(type=='string'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='double'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='date'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='integer'),\n\t\t\treplace($$,' ','') = $$)\n\t)) ~> AzureSQL"
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
