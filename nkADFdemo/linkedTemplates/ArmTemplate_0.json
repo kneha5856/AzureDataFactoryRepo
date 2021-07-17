@@ -336,7 +336,7 @@
 				],
 				"typeProperties": {
 					"schema": "dbo",
-					"table": "SalesDataWithoutNullRecords"
+					"table": "SalesData"
 				}
 			},
 			"dependsOn": [

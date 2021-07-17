@@ -13,6 +13,41 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/dataflow using flatten')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_json",
+								"type": "DatasetReference"
+							},
+							"name": "JsonSrc"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "nkds_sink",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "FlattenbyProducts"
+						}
+					],
+					"script": "source(output(\n\t\tProducts as (manufacturer as string, modelname as string, name as string)[],\n\t\tid as string,\n\t\tpricerange as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'singleDocument',\n\tpartitionBy('hash', 1)) ~> JsonSrc\nJsonSrc foldDown(unroll(Products),\n\tmapColumn(\n\t\tmanufacturer = Products.manufacturer,\n\t\tmodelname = Products.modelname,\n\t\tname = Products.name,\n\t\tid,\n\t\tpricerange\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> FlattenbyProducts\nFlattenbyProducts sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['FlatternOutput.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> sink1"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/dataflow using pivot')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -287,6 +322,54 @@
 						}
 					],
 					"script": "source(output(\n\t\t{Row ID} as short,\n\t\t{Order ID} as string,\n\t\t{Order Date} as date,\n\t\t{Ship Date} as date,\n\t\t{Ship Mode} as string,\n\t\t{Customer ID} as string,\n\t\t{Customer Name} as string,\n\t\tSegment as string,\n\t\tCountry as string,\n\t\tCity as string,\n\t\tState as string,\n\t\t{Postal Code} as integer,\n\t\tRegion as string,\n\t\t{Product ID} as string,\n\t\tCategory as string,\n\t\t{Sub-Category} as string,\n\t\t{Product Name} as string,\n\t\t{Total Sales} as double,\n\t\t{Total Quantity} as short,\n\t\t{Total Discount} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> SalesExcelSrc\nSalesExcelSrc aggregate(groupBy(Category),\n\t{Total Sales} = sum({Total Sales}),\n\t\t{Total Discount} = sum({Total Discount}),\n\t\t{Total Profit} = sum({Total Profit})) ~> AggregateByCategory\nAggregateByCategory sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['SalesAggregateValues.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> SalesExcelAggregateValuesSink"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow using surrogate key')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_azuresql",
+								"type": "DatasetReference"
+							},
+							"name": "AzureSQLsrc"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_excel_salessmalldataset",
+								"type": "DatasetReference"
+							},
+							"name": "ExcelSalesSmalldataset"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_azuresql",
+								"type": "DatasetReference"
+							},
+							"name": "AzureSQLSink"
+						}
+					],
+					"transformations": [
+						{
+							"name": "CrossJoinSQLwithExceldata"
+						},
+						{
+							"name": "SurrogateKey1"
+						},
+						{
+							"name": "DerivedColumn1"
+						}
+					],
+					"script": "source(output(\n\t\tMaxNo as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tquery: 'SELECT max(Sno) as MaxNo FROM SalesData',\n\tformat: 'query') ~> AzureSQLsrc\nsource(output(\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as date,\n\t\t{Order ID} as integer,\n\t\t{Ship Date} as date,\n\t\t{Units Sold} as integer,\n\t\t{Unit Price} as double,\n\t\t{Unit Cost} as double,\n\t\t{Total Revenue} as double,\n\t\t{Total Cost} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> ExcelSalesSmalldataset\nAzureSQLsrc, ExcelSalesSmalldataset join(1==1,\n\tjoinType:'cross',\n\tbroadcast: 'auto')~> CrossJoinSQLwithExceldata\nCrossJoinSQLwithExceldata keyGenerate(output(Surrogatekey as long),\n\tstartAt: 1L) ~> SurrogateKey1\nSurrogateKey1 derive(key = toLong(MaxNo +Surrogatekey)) ~> DerivedColumn1\nDerivedColumn1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tRollNo as string,\n\t\tName as string,\n\t\tLastname as string,\n\t\tPlace as string,\n\t\tGender as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\teach(match(type == 'string'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type == 'date'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type == 'integer'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type =='double'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(name =='key'),\n\t\t\t'Sno' = $$)\n\t)) ~> AzureSQLSink"
 				}
 			},
 			"dependsOn": []
@@ -1032,284 +1115,6 @@
 				"lastPublishTime": "2021-07-17T14:01:07Z"
 			},
 			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pl_df_upsert_alter_row')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Data flow with upsert logic",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "1.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "dataflow with upsert logic",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"ExcelSalesSource": {},
-									"AzureSQL": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"annotations": [],
-				"lastPublishTime": "2021-07-17T16:20:22Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/dataflow with upsert logic')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pl_error_handling')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Pivot",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "1.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "dataflow using pivot",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"SalescsvSrc": {},
-									"SalesPivotedResultsSink": {
-										"FileName": "SalesAggregateValues.csv"
-									}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					},
-					{
-						"name": "Unpivot",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [
-							{
-								"activity": "Pivot",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "1.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "dataflow using unpivot",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"sourceoutputsalespivoteddata": {},
-									"SalesUnpivotedResults": {
-										"FileName": "SalesAggregateValues.csv"
-									}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					},
-					{
-						"name": "Get Metadata1",
-						"type": "GetMetadata",
-						"dependsOn": [
-							{
-								"activity": "Unpivot",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataset": {
-								"referenceName": "nkds_sink",
-								"type": "DatasetReference",
-								"parameters": {
-									"FileName": "SalesAggregateValues.csv"
-								}
-							},
-							"fieldList": [
-								"childItems"
-							],
-							"storeSettings": {
-								"type": "AzureBlobStorageReadSettings",
-								"recursive": true,
-								"enablePartitionDiscovery": false
-							},
-							"formatSettings": {
-								"type": "DelimitedTextReadSettings"
-							}
-						}
-					},
-					{
-						"name": "VariabletoStoreErrorMessage",
-						"type": "SetVariable",
-						"dependsOn": [
-							{
-								"activity": "Unpivot",
-								"dependencyConditions": [
-									"Failed"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"variableName": "ErrorDetails",
-							"value": {
-								"value": "@activity('Unpivot').Error.Message",
-								"type": "Expression"
-							}
-						}
-					},
-					{
-						"name": "Get the max serial no",
-						"type": "Lookup",
-						"dependsOn": [
-							{
-								"activity": "VariabletoStoreErrorMessage",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": "select isnull(max(sno),0),max(sno)+1 as maxno from t_adf_errorlog",
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"dataset": {
-								"referenceName": "ds_azuresql",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "Stored procedure1",
-						"type": "SqlServerStoredProcedure",
-						"dependsOn": [
-							{
-								"activity": "Get the max serial no",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"storedProcedureName": "[[dbo].[usp_insertlogdetails]",
-							"storedProcedureParameters": {
-								"errormessage": {
-									"value": {
-										"value": "@variables('ErrorDetails')",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"pipelinename": {
-									"value": {
-										"value": "@pipeline().Pipeline",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"sno": {
-									"value": {
-										"value": "@activity('Get the max serial no').FirstRow.maxno",
-										"type": "Expression"
-									},
-									"type": "Int32"
-								}
-							}
-						},
-						"linkedServiceName": {
-							"referenceName": "AzureSqlDatabaseLinkedService",
-							"type": "LinkedServiceReference"
-						}
-					}
-				],
-				"variables": {
-					"ErrorDetails": {
-						"type": "String"
-					}
-				},
-				"annotations": [],
-				"lastPublishTime": "2021-07-17T08:32:18Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/dataflow using pivot')]",
-				"[concat(variables('factoryId'), '/dataflows/dataflow using unpivot')]"
-			]
 		}
 	]
 }
