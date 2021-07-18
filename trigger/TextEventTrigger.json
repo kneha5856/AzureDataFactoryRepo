@@ -1,0 +1,29 @@
+{
+	"name": "TextEventTrigger",
+	"properties": {
+		"description": "This trigger will look for the text files in the input folder and if any text files are uploaded . This pipeline will be triggered and copy the files from Input to Output folder.",
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "pl_event_trigger_copy_files_different_times",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"pl_filename": "@triggerBody().fileName"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/nkdemocontainer/blobs/Input/",
+			"blobPathEndsWith": ".txt",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/955838a1-102d-4615-9f29-383d636f6e23/resourceGroups/rg_neha/providers/Microsoft.Storage/storageAccounts/nksademoadf",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}
