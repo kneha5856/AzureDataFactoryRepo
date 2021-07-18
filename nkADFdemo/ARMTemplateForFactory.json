@@ -22,6 +22,14 @@
 		"nkdemoAzureBlobStorage_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'nkdemoAzureBlobStorage'"
+		},
+		"TextEventTrigger_properties_pl_event_trigger_copy_files_different_times_parameters_pl_filename": {
+			"type": "string",
+			"defaultValue": "@triggerBody().fileName"
+		},
+		"TextEventTrigger_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/955838a1-102d-4615-9f29-383d636f6e23/resourceGroups/rg_neha/providers/Microsoft.Storage/storageAccounts/nksademoadf"
 		}
 	},
 	"variables": {
@@ -4306,7 +4314,7 @@
 							"name": "DerivedColumn1"
 						}
 					],
-					"script": "source(output(\n\t\tMaxNo as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tquery: 'SELECT max(Sno) as MaxNo FROM SalesData',\n\tformat: 'query') ~> AzureSQLsrc\nsource(output(\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as date,\n\t\t{Order ID} as integer,\n\t\t{Ship Date} as date,\n\t\t{Units Sold} as integer,\n\t\t{Unit Price} as double,\n\t\t{Unit Cost} as double,\n\t\t{Total Revenue} as double,\n\t\t{Total Cost} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> ExcelSalesSmalldataset\nAzureSQLsrc, ExcelSalesSmalldataset join(1==1,\n\tjoinType:'cross',\n\tbroadcast: 'auto')~> CrossJoinSQLwithExceldata\nCrossJoinSQLwithExceldata keyGenerate(output(Surrogatekey as long),\n\tstartAt: 1L) ~> SurrogateKey1\nSurrogateKey1 derive(key = toLong(MaxNo +Surrogatekey)) ~> DerivedColumn1\nDerivedColumn1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tRollNo as string,\n\t\tName as string,\n\t\tLastname as string,\n\t\tPlace as string,\n\t\tGender as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\teach(match(type == 'string'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type == 'date'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type == 'integer'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type =='double'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(name =='key'),\n\t\t\t'Sno' = $$)\n\t)) ~> AzureSQLSink"
+					"script": "source(output(\n\t\tMaxNo as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tquery: 'SELECT max(Sno) as MaxNo FROM SalesData',\n\tformat: 'query') ~> AzureSQLsrc\nsource(output(\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as date,\n\t\t{Order ID} as integer,\n\t\t{Ship Date} as date,\n\t\t{Units Sold} as integer,\n\t\t{Unit Price} as double,\n\t\t{Unit Cost} as double,\n\t\t{Total Revenue} as double,\n\t\t{Total Cost} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> ExcelSalesSmalldataset\nAzureSQLsrc, ExcelSalesSmalldataset join(1==1,\n\tjoinType:'cross',\n\tbroadcast: 'auto')~> CrossJoinSQLwithExceldata\nCrossJoinSQLwithExceldata keyGenerate(output(Surrogatekey as long),\n\tstartAt: 1L) ~> SurrogateKey1\nSurrogateKey1 derive(key = toLong(MaxNo +Surrogatekey)) ~> DerivedColumn1\nDerivedColumn1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tRollNo as string,\n\t\tName as string,\n\t\tLastname as string,\n\t\tPlace as string,\n\t\tGender as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\teach(match(type=='string'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='date'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='integer'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='double'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(name=='key'),\n\t\t\t'Sno' = $$)\n\t)) ~> AzureSQLSink"
 				}
 			},
 			"dependsOn": [
@@ -4396,6 +4404,188 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/nkdemoAzureBlobStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_event_trigger_copy_files_different_times')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy text files at different times",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_event_trigger_delimitedtxt",
+								"type": "DatasetReference",
+								"parameters": {
+									"ds_filename": {
+										"value": "@pipeline().parameters.pl_filename",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_output",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"parameters": {
+					"pl_filename": {
+						"type": "string"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_event_trigger_delimitedtxt')]",
+				"[concat(variables('factoryId'), '/datasets/ds_output')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_event_trigger_delimitedtxt')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "nkdemoAzureBlobStorage",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"ds_filename": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().ds_filename",
+							"type": "Expression"
+						},
+						"folderPath": "Input",
+						"container": "nkdemocontainer"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/nkdemoAzureBlobStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_output')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "nkdemoAzureBlobStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"folderPath": "Output",
+						"container": "nkdemocontainer"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/nkdemoAzureBlobStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TextEventTrigger')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This trigger will look for the text files in the input folder and if any text files are uploaded . This pipeline will be triggered and copy the files from Input to Output folder.",
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "pl_event_trigger_copy_files_different_times",
+							"type": "PipelineReference"
+						},
+						"parameters": {
+							"pl_filename": "[parameters('TextEventTrigger_properties_pl_event_trigger_copy_files_different_times_parameters_pl_filename')]"
+						}
+					}
+				],
+				"type": "BlobEventsTrigger",
+				"typeProperties": {
+					"blobPathBeginsWith": "/nkdemocontainer/blobs/Input/",
+					"blobPathEndsWith": ".txt",
+					"ignoreEmptyBlobs": true,
+					"scope": "[parameters('TextEventTrigger_properties_typeProperties_scope')]",
+					"events": [
+						"Microsoft.Storage.BlobCreated"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/pl_event_trigger_copy_files_different_times')]"
 			]
 		}
 	]

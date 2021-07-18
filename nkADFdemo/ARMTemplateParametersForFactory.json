@@ -16,6 +16,12 @@
 		},
 		"nkdemoAzureBlobStorage_connectionString": {
 			"value": ""
+		},
+		"TextEventTrigger_properties_pl_event_trigger_copy_files_different_times_parameters_pl_filename": {
+			"value": "@triggerBody().fileName"
+		},
+		"TextEventTrigger_properties_typeProperties_scope": {
+			"value": "/subscriptions/955838a1-102d-4615-9f29-383d636f6e23/resourceGroups/rg_neha/providers/Microsoft.Storage/storageAccounts/nksademoadf"
 		}
 	}
 }

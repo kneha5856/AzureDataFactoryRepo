@@ -23,6 +23,14 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'nkdemoAzureBlobStorage'"
 		},
+		"TextEventTrigger_properties_pl_event_trigger_copy_files_different_times_parameters_pl_filename": {
+			"type": "string",
+			"defaultValue": "@triggerBody().fileName"
+		},
+		"TextEventTrigger_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/955838a1-102d-4615-9f29-383d636f6e23/resourceGroups/rg_neha/providers/Microsoft.Storage/storageAccounts/nksademoadf"
+		},
 		"containerUri": {
 			"type": "string",
 			"metadata": "URI to storage account containing linked ARM templates"
@@ -119,6 +127,12 @@
 				"parameters": {
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
+					},
+					"TextEventTrigger_properties_pl_event_trigger_copy_files_different_times_parameters_pl_filename": {
+						"value": "[parameters('TextEventTrigger_properties_pl_event_trigger_copy_files_different_times_parameters_pl_filename')]"
+					},
+					"TextEventTrigger_properties_typeProperties_scope": {
+						"value": "[parameters('TextEventTrigger_properties_typeProperties_scope')]"
 					}
 				}
 			},

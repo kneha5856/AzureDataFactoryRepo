@@ -13,6 +13,76 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/dataflow using column patterns')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_blob_sales_excel",
+								"type": "DatasetReference"
+							},
+							"name": "SalesExcelSrc"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "nkds_sink",
+								"type": "DatasetReference"
+							},
+							"name": "sinkforcolumnpatterns"
+						}
+					],
+					"transformations": [
+						{
+							"name": "AggregatebyCategory"
+						}
+					],
+					"script": "source(output(\n\t\t{Row ID} as short,\n\t\t{Order ID} as string,\n\t\t{Order Date} as date,\n\t\t{Ship Date} as date,\n\t\t{Ship Mode} as string,\n\t\t{Customer ID} as string,\n\t\t{Customer Name} as string,\n\t\tSegment as string,\n\t\tCountry as string,\n\t\tCity as string,\n\t\tState as string,\n\t\t{Postal Code} as integer,\n\t\tRegion as string,\n\t\t{Product ID} as string,\n\t\tCategory as string,\n\t\t{Sub-Category} as string,\n\t\t{Product Name} as string,\n\t\t{Total Sales} as double,\n\t\tQuantity as short,\n\t\t{Total Discount} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> SalesExcelSrc\nSalesExcelSrc aggregate(groupBy(Category),\n\teach(match(type=='double'), $$ = sum($$))) ~> AggregatebyCategory\nAggregatebyCategory sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['SalesOutputAggregateWithColumnPatterns.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> sinkforcolumnpatterns"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow using filter activity')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_sales_csv_source",
+								"type": "DatasetReference"
+							},
+							"name": "salessrccsv"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "nkds_sink",
+								"type": "DatasetReference"
+							},
+							"name": "SnacksCosmeticsSink"
+						}
+					],
+					"transformations": [
+						{
+							"name": "FilterrecordswithsnacksandCosmetics"
+						}
+					],
+					"script": "source(output(\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as string,\n\t\t{Order ID} as string,\n\t\t{Ship Date} as string,\n\t\t{Units Sold} as string,\n\t\t{Unit Price} as string,\n\t\t{Unit Cost} as string,\n\t\t{Total Revenue} as string,\n\t\t{Total Cost} as string,\n\t\t{Total Profit} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> salessrccsv\nsalessrccsv filter({Item Type}=='Snacks' || {Item Type}=='Cosmetics') ~> FilterrecordswithsnacksandCosmetics\nFilterrecordswithsnacksandCosmetics sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['SalesDataWithSnacks&CosmeticsRecords.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> SnacksCosmeticsSink"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/dataflow using flatten')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -369,8 +439,90 @@
 							"name": "DerivedColumn1"
 						}
 					],
-					"script": "source(output(\n\t\tMaxNo as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tquery: 'SELECT max(Sno) as MaxNo FROM SalesData',\n\tformat: 'query') ~> AzureSQLsrc\nsource(output(\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as date,\n\t\t{Order ID} as integer,\n\t\t{Ship Date} as date,\n\t\t{Units Sold} as integer,\n\t\t{Unit Price} as double,\n\t\t{Unit Cost} as double,\n\t\t{Total Revenue} as double,\n\t\t{Total Cost} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> ExcelSalesSmalldataset\nAzureSQLsrc, ExcelSalesSmalldataset join(1==1,\n\tjoinType:'cross',\n\tbroadcast: 'auto')~> CrossJoinSQLwithExceldata\nCrossJoinSQLwithExceldata keyGenerate(output(Surrogatekey as long),\n\tstartAt: 1L) ~> SurrogateKey1\nSurrogateKey1 derive(key = toLong(MaxNo +Surrogatekey)) ~> DerivedColumn1\nDerivedColumn1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tRollNo as string,\n\t\tName as string,\n\t\tLastname as string,\n\t\tPlace as string,\n\t\tGender as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\teach(match(type == 'string'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type == 'date'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type == 'integer'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type =='double'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(name =='key'),\n\t\t\t'Sno' = $$)\n\t)) ~> AzureSQLSink"
+					"script": "source(output(\n\t\tMaxNo as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tquery: 'SELECT max(Sno) as MaxNo FROM SalesData',\n\tformat: 'query') ~> AzureSQLsrc\nsource(output(\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as date,\n\t\t{Order ID} as integer,\n\t\t{Ship Date} as date,\n\t\t{Units Sold} as integer,\n\t\t{Unit Price} as double,\n\t\t{Unit Cost} as double,\n\t\t{Total Revenue} as double,\n\t\t{Total Cost} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> ExcelSalesSmalldataset\nAzureSQLsrc, ExcelSalesSmalldataset join(1==1,\n\tjoinType:'cross',\n\tbroadcast: 'auto')~> CrossJoinSQLwithExceldata\nCrossJoinSQLwithExceldata keyGenerate(output(Surrogatekey as long),\n\tstartAt: 1L) ~> SurrogateKey1\nSurrogateKey1 derive(key = toLong(MaxNo +Surrogatekey)) ~> DerivedColumn1\nDerivedColumn1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tRollNo as string,\n\t\tName as string,\n\t\tLastname as string,\n\t\tPlace as string,\n\t\tGender as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\teach(match(type=='string'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='date'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='integer'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(type=='double'),\n\t\t\treplace($$,' ','') = $$),\n\t\teach(match(name=='key'),\n\t\t\t'Sno' = $$)\n\t)) ~> AzureSQLSink"
 				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_event_trigger_copy_files_different_times')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy text files at different times",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_event_trigger_delimitedtxt",
+								"type": "DatasetReference",
+								"parameters": {
+									"ds_filename": {
+										"value": "@pipeline().parameters.pl_filename",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_output",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"parameters": {
+					"pl_filename": {
+						"type": "string"
+					}
+				},
+				"annotations": []
 			},
 			"dependsOn": []
 		},
@@ -528,7 +680,9 @@
 				"annotations": [],
 				"lastPublishTime": "2021-07-16T07:28:22Z"
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/dataflow using column patterns')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/pipeline_lookup_activity_conditional_iteration')]",
@@ -979,140 +1133,6 @@
 				],
 				"annotations": [],
 				"lastPublishTime": "2021-07-10T10:32:13Z"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pl_dataflow')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Data flow AzureExcel SRC Copy to Blob csv files",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "1.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "dataflowSrcderviedColumnSink",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"AzureSQLexcelsrc": {},
-									"AzureSQLSource": {},
-									"BlobStorageSink": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"annotations": [],
-				"lastPublishTime": "2021-07-10T18:26:21Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/dataflowSrcderviedColumnSink')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pl_dataflow_with_Union_Activity')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Data flow AzureExcel and SQL SRC Copy to Blob csv files",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "1.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "dataflowSrcderviedColumnSink",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"AzureSQLexcelsrc": {},
-									"AzureSQLSource": {},
-									"BlobStorageSink": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"annotations": [],
-				"lastPublishTime": "2021-07-11T14:37:41Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/dataflowSrcderviedColumnSink')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pl_df_filter_activity')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Data flow with Filter activity",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "1.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "dataflow using filter activity",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"salessrccsv": {},
-									"SnacksCosmeticsSink": {
-										"FileName": "SalesAggregateValues.csv"
-									}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"annotations": [],
-				"lastPublishTime": "2021-07-17T14:01:07Z"
 			},
 			"dependsOn": []
 		}

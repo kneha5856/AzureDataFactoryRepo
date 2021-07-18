@@ -280,6 +280,65 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/ds_event_trigger_delimitedtxt')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "nkdemoAzureBlobStorage",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"ds_filename": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().ds_filename",
+							"type": "Expression"
+						},
+						"folderPath": "Input",
+						"container": "nkdemocontainer"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_output')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "nkdemoAzureBlobStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"folderPath": "Output",
+						"container": "nkdemocontainer"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/nk_pl_copy_multiples_files')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -1413,76 +1472,6 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/SqlServerOnPremise')]"
 			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/dataflow using column patterns')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "ds_blob_sales_excel",
-								"type": "DatasetReference"
-							},
-							"name": "SalesExcelSrc"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "nkds_sink",
-								"type": "DatasetReference"
-							},
-							"name": "sinkforcolumnpatterns"
-						}
-					],
-					"transformations": [
-						{
-							"name": "AggregatebyCategory"
-						}
-					],
-					"script": "source(output(\n\t\t{Row ID} as short,\n\t\t{Order ID} as string,\n\t\t{Order Date} as date,\n\t\t{Ship Date} as date,\n\t\t{Ship Mode} as string,\n\t\t{Customer ID} as string,\n\t\t{Customer Name} as string,\n\t\tSegment as string,\n\t\tCountry as string,\n\t\tCity as string,\n\t\tState as string,\n\t\t{Postal Code} as integer,\n\t\tRegion as string,\n\t\t{Product ID} as string,\n\t\tCategory as string,\n\t\t{Sub-Category} as string,\n\t\t{Product Name} as string,\n\t\t{Total Sales} as double,\n\t\tQuantity as short,\n\t\t{Total Discount} as double,\n\t\t{Total Profit} as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> SalesExcelSrc\nSalesExcelSrc aggregate(groupBy(Category),\n\teach(match(type=='double'), $$ = sum($$))) ~> AggregatebyCategory\nAggregatebyCategory sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['SalesOutputAggregateWithColumnPatterns.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> sinkforcolumnpatterns"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/dataflow using filter activity')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "ds_sales_csv_source",
-								"type": "DatasetReference"
-							},
-							"name": "salessrccsv"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "nkds_sink",
-								"type": "DatasetReference"
-							},
-							"name": "SnacksCosmeticsSink"
-						}
-					],
-					"transformations": [
-						{
-							"name": "FilterrecordswithsnacksandCosmetics"
-						}
-					],
-					"script": "source(output(\n\t\tRegion as string,\n\t\tCountry as string,\n\t\t{Item Type} as string,\n\t\t{Sales Channel} as string,\n\t\t{Order Priority} as string,\n\t\t{Order Date} as string,\n\t\t{Order ID} as string,\n\t\t{Ship Date} as string,\n\t\t{Units Sold} as string,\n\t\t{Unit Price} as string,\n\t\t{Unit Cost} as string,\n\t\t{Total Revenue} as string,\n\t\t{Total Cost} as string,\n\t\t{Total Profit} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> salessrccsv\nsalessrccsv filter({Item Type}=='Snacks' || {Item Type}=='Cosmetics') ~> FilterrecordswithsnacksandCosmetics\nFilterrecordswithsnacksandCosmetics sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['SalesDataWithSnacks&CosmeticsRecords.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> SnacksCosmeticsSink"
-				}
-			},
-			"dependsOn": []
 		}
 	]
 }
